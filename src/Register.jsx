@@ -51,8 +51,9 @@ const Register = (props) => {
             setErrMsg("Invalid Entry");
             return;
         }
+
+        //props.setIsLoggedIn(true); // Update authentication status upon successful registration
         console.log(user,pwd);
-        props.setIsLoggedIn(true); // Update authentication status upon successful registration
     }
 
     return(

@@ -4,10 +4,20 @@ import {NewTodoForm} from "./NewTodoForm"
 import {TodoList} from "./TodoList.jsx";
 import Register from "./Register.jsx"
 import Login from "./Login.jsx";
+import axios from "axios";
+import AuthProvider from "./backend/AuthProvider.jsx";
 
 
 export default function App() {
 
+    const [data, setData] = useState("");
+    const getData=async()=>{
+        const response = await axios.get("http://localhost:8080/getData");
+        setData(response.data);
+    }
+    useEffect(() => {
+        getData()
+    }, []);
     const [todos, setTodos] = useState(
         ()=>{
             const localValue=localStorage.getItem("ITEMS")
@@ -15,6 +25,7 @@ export default function App() {
             return JSON.parse(localValue)
         }
     )
+
     const [isLoggedIn, setIsLoggedIn] = useState(false); // Track user authentication status
     useEffect(() => {
         localStorage.setItem("ITEMS", JSON.stringify(todos))
@@ -47,7 +58,14 @@ export default function App() {
             {isLoggedIn && <NewTodoForm onSubmit={addTodo} />}
             {isLoggedIn && <h1 className="header">Todo List</h1>}
             {isLoggedIn && <TodoList todos={todos} toggleTodo={toggleTodo} deleteTodo={deleteTodo} />}*/}
-            <Register setIsLoggedIn={setIsLoggedIn}/>
+
+
+            <div className="App">
+                <AuthProvider>
+                    <Register/>
+                </AuthProvider>
+            </div>
+
 
         </>
     )
