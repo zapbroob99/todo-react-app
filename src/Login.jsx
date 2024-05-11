@@ -1,9 +1,18 @@
 import { useRef, useState, useEffect, useContext } from 'react';
+import  AuthProvider  from "./backend/AuthProvider.jsx";
+import axios from 'axios';
+import AuthContext from "./backend/AuthProvider.jsx";
+import Register from "./Register.jsx";
+import App from "./App.jsx";
+import reactDom from "react-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Outlet, Link } from "react-router-dom";
 
-
-const LOGIN_URL = '/auth';
+const LOGIN_URL = 'http://localhost:3500/auth';
 
 const Login = () => {
+
+    const { setAuth } = useContext(AuthContext);
 
     const userRef = useRef();
     const errRef = useRef();
@@ -23,23 +32,41 @@ const Login = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log(user);
-        setUser('');
-        setPwd('')
-        setSuccess(true)
 
+        try {
+            const response = await axios.post(LOGIN_URL,
+                JSON.stringify({ user, pwd }),
+                {
+                    headers: { 'Content-Type': 'application/json' },
+                    withCredentials: true
+                }
+            );
+            console.log(JSON.stringify(response?.data));
+            //console.log(JSON.stringify(response));
+            const accessToken = response?.data?.accessToken;
+            const roles = response?.data?.roles;
+            setAuth({ user, pwd, roles, accessToken });
+            setUser('');
+            setPwd('');
+            setSuccess(true);
+        } catch (err) {
+            if (!err?.response) {
+                setErrMsg('No Server Response');
+            } else if (err.response?.status === 400) {
+                setErrMsg('Missing Username or Password');
+            } else if (err.response?.status === 401) {
+                setErrMsg('Unauthorized');
+            } else {
+                setErrMsg('Login Failed');
+            }
+            errRef.current.focus();
+        }
     }
 
     return (
         <>
             {success ? (
-                <section>
-                    <h1>You are logged in!</h1>
-                    <br />
-                    <p>
-                        <a href="#">Go to Home</a>
-                    </p>
-                </section>
+                <p>success</p>
             ) : (
                 <section>
                     <p ref={errRef} className={errMsg ? "errmsg" : "offscreen"} aria-live="assertive">{errMsg}</p>

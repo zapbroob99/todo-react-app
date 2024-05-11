@@ -6,6 +6,8 @@ import Register from "./Register.jsx"
 import Login from "./Login.jsx";
 import axios from "axios";
 import AuthProvider from "./backend/AuthProvider.jsx";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 
 export default function App() {
@@ -54,19 +56,13 @@ export default function App() {
     }
     return (
         <>
-            {/*{!isLoggedIn && <Register setIsLoggedIn={setIsLoggedIn} />}
-            {isLoggedIn && <NewTodoForm onSubmit={addTodo} />}
-            {isLoggedIn && <h1 className="header">Todo List</h1>}
-            {isLoggedIn && <TodoList todos={todos} toggleTodo={toggleTodo} deleteTodo={deleteTodo} />}*/}
+        <BrowserRouter>
+            <Routes>
+                <Route path="/" element={<TodoList todos={todos} toggleTodo={toggleTodo} deleteTodo={deleteTodo} />}></Route>
 
-
-            <div className="App">
-                <AuthProvider>
-                    <Register/>
-                </AuthProvider>
-            </div>
-
-
+            </Routes>
+        </BrowserRouter>
+            <NewTodoForm onSubmit={addTodo}/>
         </>
     )
 }
