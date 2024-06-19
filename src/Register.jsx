@@ -1,18 +1,22 @@
-import {useEffect, useRef} from "react";
-import {useState} from "react";
-import {faCheck,faTimes,faInfoCircle} from "@fortawesome/free-solid-svg-icons";
-import {FontAwesomeIcon} from "@fortawesome/react-fontawesome"
+import { useRef, useState, useEffect, useContext } from 'react';
+import axios from 'axios';
+import { faCheck, faTimes, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import AuthContext from './backend/AuthProvider.jsx'; // Import AuthContext
 
-const USER_REGEX = /^[a-zA-Z][a-zA-Z0-9_]*$|^_[a-zA-Z0-9_]{3,23}$/
+const USER_REGEX = /^[a-zA-Z][a-zA-Z0-9_]*$|^_[a-zA-Z0-9_]{3,23}$/;
 const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%]).{8,24}$/;
 
-const Register = (props) => {
+const Register = () => {
     const userRef = useRef(null);
     const errRef = useRef(null);
+    const navigate = useNavigate(); // Initialize useNavigate
+    const { setAuth } = useContext(AuthContext); // Use AuthContext to set auth state
 
-    const[user, setUser] = useState('');
+    const [user, setUser] = useState('');
     const [validName, setValidName] = useState(false);
-    const[userFocus, setUserFocus] = useState(false);
+    const [userFocus, setUserFocus] = useState(false);
 
     const [pwd, setPwd] = useState('');
     const [validPwd, setValidPwd] = useState(false);
@@ -27,44 +31,79 @@ const Register = (props) => {
 
     useEffect(() => {
         userRef.current.focus();
-    }, [])
+    }, []);
 
     useEffect(() => {
         setValidName(USER_REGEX.test(user));
-    }, [user])
+    }, [user]);
 
     useEffect(() => {
         setValidPwd(PWD_REGEX.test(pwd));
         setValidMatch(pwd === matchPwd);
-    }, [pwd, matchPwd])
+    }, [pwd, matchPwd]);
 
     useEffect(() => {
         setErrMsg('');
-    }, [user, pwd, matchPwd])
+    }, [user, pwd, matchPwd]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        // if button enabled with JS hack
-        const v1 = USER_REGEX.test(user);
-        const v2 = PWD_REGEX.test(pwd);
-        if (!v1 || !v2) {
-            setErrMsg("Invalid Entry");
+
+        if (!validName || !validPwd || !validMatch) {
+            setErrMsg('Invalid Entry');
             return;
         }
 
-        //props.setIsLoggedIn(true); // Update authentication status upon successful registration
-        console.log(user,pwd);
-    }
+        try {
+            const response = await axios.post(
+                'http://localhost:3500/register', // Replace with your backend register endpoint
+                { username: user, password: pwd }, // Sending 'username' and 'password'
+                {
+                    headers: { 'Content-Type': 'application/json' },
+                }
+            );
 
-    return(
+            console.log('Registration successful:', response.data);
+
+            // Automatically authenticate the user
+            const loginResponse = await axios.post(
+                'http://localhost:3500/auth', // Replace with your backend login endpoint
+                { username: user, password: pwd },
+                {
+                    headers: { 'Content-Type': 'application/json' },
+                    withCredentials: true, // Send cookies with CORS requests
+                }
+            );
+
+            const accessToken = loginResponse.data.accessToken;
+            // const roles = loginResponse.data.roles; // If roles are needed
+
+            // Set auth state
+            setAuth({ user, accessToken });
+
+            // Redirect to todo page
+            navigate('/todo');
+
+            setSuccess(true); // Optional: set success state for UI feedback
+
+        } catch (err) {
+            console.error('Registration failed:', err);
+            setErrMsg('Registration Failed');
+            errRef.current.focus();
+        }
+    };
+
+    return (
         <section>
-            <p ref={errRef} className={errMsg?"errmsg":"offscreen"} aria-live={"assertive"}>{errMsg}</p>
+            <p ref={errRef} className={errMsg ? 'errmsg' : 'offscreen'} aria-live="assertive">
+                {errMsg}
+            </p>
             <h1>Register</h1>
             <form onSubmit={handleSubmit}>
                 <label htmlFor="username">
                     Username:
-                    <FontAwesomeIcon icon={faCheck} className={validName ? "valid" : "hide"}/>
-                    <FontAwesomeIcon icon={faTimes} className={validName || !user ? "hide" : "invalid"}/>
+                    <FontAwesomeIcon icon={faCheck} className={validName ? 'valid' : 'hide'} />
+                    <FontAwesomeIcon icon={faTimes} className={validName || !user ? 'hide' : 'invalid'} />
                 </label>
                 <input
                     type="text"
@@ -74,22 +113,21 @@ const Register = (props) => {
                     onChange={(e) => setUser(e.target.value)}
                     value={user}
                     required
-                    aria-invalid={validName ? "false" : "true"}
+                    aria-invalid={validName ? 'false' : 'true'}
                     aria-describedby="uidnote"
                     onFocus={() => setUserFocus(true)}
                     onBlur={() => setUserFocus(false)}
                 />
-                <p id="uidnote" className={userFocus && user && !validName ? "instructions" : "offscreen"}>
-                    <FontAwesomeIcon icon={faInfoCircle}/>
-                    4 to 24 characters<br/>
-                    Must begin with a letter <b/>
+                <p id="uidnote" className={userFocus && user && !validName ? 'instructions' : 'offscreen'}>
+                    <FontAwesomeIcon icon={faInfoCircle} />
+                    4 to 24 characters<br />
+                    Must begin with a letter <br />
                     Letters, numbers, underscores, hyphens allowed
-
                 </p>
                 <label htmlFor="password">
                     Password:
-                    <FontAwesomeIcon icon={faCheck} className={validPwd ? "valid" : "hide"} />
-                    <FontAwesomeIcon icon={faTimes} className={validPwd || !pwd ? "hide" : "invalid"} />
+                    <FontAwesomeIcon icon={faCheck} className={validPwd ? 'valid' : 'hide'} />
+                    <FontAwesomeIcon icon={faTimes} className={validPwd || !pwd ? 'hide' : 'invalid'} />
                 </label>
                 <input
                     type="password"
@@ -97,21 +135,20 @@ const Register = (props) => {
                     onChange={(e) => setPwd(e.target.value)}
                     value={pwd}
                     required
-                    aria-invalid={validPwd ? "false" : "true"}
-                    aria-describedby="pwdnote"
+                    aria-invalid={validPwd ? 'false' : 'true'}
+                    aria-describedby="uidpwd"
                     onFocus={() => setPwdFocus(true)}
                     onBlur={() => setPwdFocus(false)}
                 />
-                <p id="uidpwd" className={pwdFocus && !validPwd ? "instructions" : "offscreen"}>
-                    <FontAwesomeIcon icon={faInfoCircle}/>
+                <p id="uidpwd" className={pwdFocus && !validPwd ? 'instructions' : 'offscreen'}>
+                    <FontAwesomeIcon icon={faInfoCircle} />
                     8 to 24 characters.<br />
-                    Must include uppercase and lowercase letters, a number and a special character.<br />
-
+                    Must include uppercase and lowercase letters, a number and a special character.
                 </p>
                 <label htmlFor="confirm_pwd">
                     Confirm Password:
-                    <FontAwesomeIcon icon={faCheck} className={validMatch && matchPwd ? "valid" : "hide"}/>
-                    <FontAwesomeIcon icon={faTimes} className={validMatch || !matchPwd ? "hide" : "invalid"}/>
+                    <FontAwesomeIcon icon={faCheck} className={validMatch && matchPwd ? 'valid' : 'hide'} />
+                    <FontAwesomeIcon icon={faTimes} className={validMatch || !matchPwd ? 'hide' : 'invalid'} />
                 </label>
                 <input
                     type="password"
@@ -119,27 +156,25 @@ const Register = (props) => {
                     onChange={(e) => setMatchPwd(e.target.value)}
                     value={matchPwd}
                     required
-                    aria-invalid={validMatch ? "false" : "true"}
+                    aria-invalid={validMatch ? 'false' : 'true'}
                     aria-describedby="confirmnote"
                     onFocus={() => setMatchFocus(true)}
                     onBlur={() => setMatchFocus(false)}
                 />
-                <p id="confirmnote" className={matchFocus && !validMatch ? "instructions" : "offscreen"}>
-                    <FontAwesomeIcon icon={faInfoCircle}/>
+                <p id="confirmnote" className={matchFocus && !validMatch ? 'instructions' : 'offscreen'}>
+                    <FontAwesomeIcon icon={faInfoCircle} />
                     Must match the first password input field.
                 </p>
-
-                <button disabled={!validName || !validPwd || !validMatch ? true : false}>Sign Up</button>
+                <button disabled={!validName || !validPwd || !validMatch}>Sign Up</button>
             </form>
             <p>
-                Already Registered? <br/>
+                Already Registered? <br />
                 <span className="line">
-                    {}
-                    <a href="#">Sign in</a>
-
+                    <a href="/login">Sign in</a>
                 </span>
             </p>
         </section>
-    )
-}
-export default Register; // Added export default
+    );
+};
+
+export default Register;

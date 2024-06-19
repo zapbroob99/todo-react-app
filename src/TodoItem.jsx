@@ -5,10 +5,10 @@ export function TodoItem({ completed, id, title, toggleTodo, deleteTodo }){
                 <input type="checkbox" checked={completed}
                     onChange={event => toggleTodo(id, event.target.checked)}
                 />
-                {title}
+                  {title}
             </label>
             <button onClick={() => deleteTodo(id)}
-                className="btn-danger">Delete
+                className="btn-danger">delete
             </button>
         </li>
     )

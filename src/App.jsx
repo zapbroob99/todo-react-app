@@ -1,68 +1,44 @@
 import "./styles.css"
-import {useEffect, useState} from "react";
-import {NewTodoForm} from "./NewTodoForm"
-import {TodoList} from "./TodoList.jsx";
+import {useContext, useEffect, useState} from "react";
+
 import Register from "./Register.jsx"
 import Login from "./Login.jsx";
-import axios from "axios";
-import AuthProvider from "./backend/AuthProvider.jsx";
-import ReactDOM from "react-dom/client";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import TodoPage from "./TodoPage.jsx";
+import AuthContext from "./backend/AuthProvider.jsx";
 
+const ProtectedRoute = ({ children }) => {
+    const { auth } = useContext(AuthContext);
+
+    // Redirect to login if user is not authenticated
+    if (!auth) {
+        return <Navigate to="/login" />;
+    }
+
+    return children;
+};
 
 export default function App() {
 
-    const [data, setData] = useState("");
-    const getData=async()=>{
-        const response = await axios.get("http://localhost:8080/getData");
-        setData(response.data);
-    }
-    useEffect(() => {
-        getData()
-    }, []);
-    const [todos, setTodos] = useState(
-        ()=>{
-            const localValue=localStorage.getItem("ITEMS")
-            if(localValue===null){return []}
-            return JSON.parse(localValue)
-        }
-    )
 
-    const [isLoggedIn, setIsLoggedIn] = useState(false); // Track user authentication status
+    const { auth, setAuth } = useContext(AuthContext);
+
     useEffect(() => {
-        localStorage.setItem("ITEMS", JSON.stringify(todos))
-    }, [todos]);
-    function toggleTodo(id,completed){
-        setTodos(currentTodos=>{
-            return currentTodos.map(todo=>{
-                if(todo.id===id){
-                    return {...todo,completed}
-                }
-                return todo
-            })
-        })
-    }
-    function deleteTodo(id){
-        setTodos(currentTodos=>{
-            return currentTodos.filter(todo=>todo.id !== id)
-        })
-    }
-    function addTodo(title){
-        setTodos(currentTodos=>{
-            return[
-                ...currentTodos,{id:crypto.randomUUID(),title,completed:false},
-            ]
-        })
-    }
-    return (
-        <>
+        // Retrieve stored authentication status
+        const storedAuth = localStorage.getItem("auth");
+        if (storedAuth) {
+            setAuth(JSON.parse(storedAuth));
+        }
+    }, [setAuth]);
+
+    return ( //renders todopage or login page depending on whether user is logged in or not. it is handled by authprovider.js
         <BrowserRouter>
             <Routes>
-                <Route path="/" element={<TodoList todos={todos} toggleTodo={toggleTodo} deleteTodo={deleteTodo} />}></Route>
-
+                <Route path="/" element={<Navigate to={auth ? "/todo" : "/login"} />} />
+                <Route path="/login" element={auth ? <Navigate to="/todo" /> : <Login />} />
+                <Route path="/register" element={auth ? <Navigate to="/todo" /> : <Register />} />
+                <Route path="/todo" element={<ProtectedRoute><TodoPage /></ProtectedRoute>} />
             </Routes>
         </BrowserRouter>
-            <NewTodoForm onSubmit={addTodo}/>
-        </>
-    )
+    );
 }

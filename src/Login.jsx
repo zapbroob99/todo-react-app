@@ -1,16 +1,15 @@
 import { useRef, useState, useEffect, useContext } from 'react';
-import  AuthProvider  from "./backend/AuthProvider.jsx";
+
 import axios from 'axios';
 import AuthContext from "./backend/AuthProvider.jsx";
-import Register from "./Register.jsx";
-import App from "./App.jsx";
-import reactDom from "react-dom";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Outlet, Link } from "react-router-dom";
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 const LOGIN_URL = 'http://localhost:3500/auth';
 
 const Login = () => {
+
+    const navigate = useNavigate(); // Initialize useNavigate
 
     const { setAuth } = useContext(AuthContext);
 
@@ -34,35 +33,42 @@ const Login = () => {
         e.preventDefault();
 
         try {
-            const response = await axios.post(LOGIN_URL,
-                JSON.stringify({ user, pwd }),
+            const response = await axios.post(
+                LOGIN_URL,
+                { username: user, password: pwd  }, // sending data as an object, no need to stringify
                 {
                     headers: { 'Content-Type': 'application/json' },
-                    withCredentials: true
+                    withCredentials: true // sending cookies with CORS requests
                 }
             );
-            console.log(JSON.stringify(response?.data));
-            //console.log(JSON.stringify(response));
-            const accessToken = response?.data?.accessToken;
-            const roles = response?.data?.roles;
-            setAuth({ user, pwd, roles, accessToken });
+
+            console.log('Login successful:', response.data);
+
+
+           // const accessToken = response.data.accessToken;
+            setAuth(true);
+            localStorage.setItem("auth", JSON.stringify(true));
+
             setUser('');
             setPwd('');
             setSuccess(true);
+
+            navigate('/todo');
+
         } catch (err) {
-            if (!err?.response) {
+            if (!err.response) {
                 setErrMsg('No Server Response');
-            } else if (err.response?.status === 400) {
+            } else if (err.response.status === 400) {
                 setErrMsg('Missing Username or Password');
-            } else if (err.response?.status === 401) {
+            } else if (err.response.status === 401) {
                 setErrMsg('Unauthorized');
             } else {
                 setErrMsg('Login Failed');
             }
+
             errRef.current.focus();
         }
-    }
-
+    };
     return (
         <>
             {success ? (
@@ -94,10 +100,9 @@ const Login = () => {
                         <button>Sign In</button>
                     </form>
                     <p>
-                        Need an Account?<br />
+                        Need an Account?<br/>
                         <span className="line">
-                            {/*put router link here*/}
-                            <a href="#">Sign Up</a>
+                            <Link to="/register">Sign Up</Link>
                         </span>
                     </p>
                 </section>
