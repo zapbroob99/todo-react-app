@@ -2,17 +2,17 @@ import { useRef, useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { faCheck, faTimes, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
-import AuthContext from './backend/AuthProvider.jsx'; // Import AuthContext
+import { useNavigate } from 'react-router-dom';
+import AuthContext from './backend/AuthProvider';
 
-const USER_REGEX = /^[a-zA-Z][a-zA-Z0-9_]*$|^_[a-zA-Z0-9_]{3,23}$/;
-const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%]).{8,24}$/;
+const USER_REGEX = /^[a-zA-Z][a-zA-Z0-9_]{3,23}$/;
+const PWD_REGEX = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{6,16}$/;
 
 const Register = () => {
     const userRef = useRef(null);
     const errRef = useRef(null);
-    const navigate = useNavigate(); // Initialize useNavigate
-    const { setAuth } = useContext(AuthContext); // Use AuthContext to set auth state
+    const navigate = useNavigate();
+    const { setAuth } = useContext(AuthContext);
 
     const [user, setUser] = useState('');
     const [validName, setValidName] = useState(false);
@@ -56,35 +56,29 @@ const Register = () => {
 
         try {
             const response = await axios.post(
-                'http://localhost:3500/register', // Replace with your backend register endpoint
-                { username: user, password: pwd }, // Sending 'username' and 'password'
-                {
-                    headers: { 'Content-Type': 'application/json' },
-                }
+                'http://localhost:3500/register',
+                { username: user, password: pwd },
+                { headers: { 'Content-Type': 'application/json' } }
             );
 
             console.log('Registration successful:', response.data);
 
-            // Automatically authenticate the user
             const loginResponse = await axios.post(
-                'http://localhost:3500/auth', // Replace with your backend login endpoint
+                'http://localhost:3500/auth',
                 { username: user, password: pwd },
                 {
                     headers: { 'Content-Type': 'application/json' },
-                    withCredentials: true, // Send cookies with CORS requests
+                    withCredentials: true,
                 }
             );
 
             const accessToken = loginResponse.data.accessToken;
-            // const roles = loginResponse.data.roles; // If roles are needed
 
-            // Set auth state
             setAuth({ user, accessToken });
 
-            // Redirect to todo page
-            navigate('/todo');
+            navigate('/login');
 
-            setSuccess(true); // Optional: set success state for UI feedback
+            setSuccess(true);
 
         } catch (err) {
             console.error('Registration failed:', err);
@@ -121,8 +115,8 @@ const Register = () => {
                 <p id="uidnote" className={userFocus && user && !validName ? 'instructions' : 'offscreen'}>
                     <FontAwesomeIcon icon={faInfoCircle} />
                     4 to 24 characters<br />
-                    Must begin with a letter <br />
-                    Letters, numbers, underscores, hyphens allowed
+                    Must begin with a letter<br />
+                    Letters, numbers, underscores allowed
                 </p>
                 <label htmlFor="password">
                     Password:
@@ -136,14 +130,14 @@ const Register = () => {
                     value={pwd}
                     required
                     aria-invalid={validPwd ? 'false' : 'true'}
-                    aria-describedby="uidpwd"
+                    aria-describedby="pwdnote"
                     onFocus={() => setPwdFocus(true)}
                     onBlur={() => setPwdFocus(false)}
                 />
-                <p id="uidpwd" className={pwdFocus && !validPwd ? 'instructions' : 'offscreen'}>
+                <p id="pwdnote" className={pwdFocus && !validPwd ? 'instructions' : 'offscreen'}>
                     <FontAwesomeIcon icon={faInfoCircle} />
                     8 to 24 characters.<br />
-                    Must include uppercase and lowercase letters, a number and a special character.
+                    Must include uppercase and lowercase letters, a number, and a special character.
                 </p>
                 <label htmlFor="confirm_pwd">
                     Confirm Password:

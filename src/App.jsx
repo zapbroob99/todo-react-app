@@ -1,16 +1,15 @@
-import "./styles.css"
-import {useContext, useEffect, useState} from "react";
-
-import Register from "./Register.jsx"
-import Login from "./Login.jsx";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import TodoPage from "./TodoPage.jsx";
-import AuthContext from "./backend/AuthProvider.jsx";
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import TodoPage from './TodoPage.jsx';
+import Register from './Register.jsx';
+import Login from './Login.jsx';
+import Logout from './Logout.jsx';
+import AuthContext from './backend/AuthProvider.jsx';
+import { useContext, useEffect } from 'react';
 
 const ProtectedRoute = ({ children }) => {
     const { auth } = useContext(AuthContext);
 
-    // Redirect to login if user is not authenticated
     if (!auth) {
         return <Navigate to="/login" />;
     }
@@ -18,21 +17,21 @@ const ProtectedRoute = ({ children }) => {
     return children;
 };
 
-export default function App() {
-
-
+const App = () => {
     const { auth, setAuth } = useContext(AuthContext);
 
     useEffect(() => {
-        // Retrieve stored authentication status
         const storedAuth = localStorage.getItem("auth");
         if (storedAuth) {
             setAuth(JSON.parse(storedAuth));
         }
     }, [setAuth]);
 
-    return ( //renders todopage or login page depending on whether user is logged in or not. it is handled by authprovider.js
+    return (
         <BrowserRouter>
+            <header>
+                {auth && <Logout />} {/* Show Logout button only when authenticated */}
+            </header>
             <Routes>
                 <Route path="/" element={<Navigate to={auth ? "/todo" : "/login"} />} />
                 <Route path="/login" element={auth ? <Navigate to="/todo" /> : <Login />} />
@@ -41,4 +40,6 @@ export default function App() {
             </Routes>
         </BrowserRouter>
     );
-}
+};
+
+export default App;
